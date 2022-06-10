@@ -8,7 +8,7 @@ on:
 jobs:
 
   test:
-    Name: Go Tests
+    name: Go Tests
     runs-on: ubuntu-latest
     steps:
       - name: checkout repository

@@ -1,0 +1,39 @@
+name: Go Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+
+  test:
+    Name: Go Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v3
+
+      - name: Use go >= 1.18  
+        uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.18'
+
+      - name: Test all
+        run: |
+          go test -v -coverprofile=profile.cov ./...
+
+      - name: Send coverage
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: profile.cov
+          parallel: true
+
+  # notifies that all test jobs are finished.
+  finish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: shogo82148/actions-goveralls@v1
+        with:
+          parallel-finished: true

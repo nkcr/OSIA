@@ -1,3 +1,7 @@
+<div align="center">
+<img width="150" src="logo.jpg"/>
+</div>
+
 # Open Source Instagram Aggregator
 
 [![Go Tests](https://github.com/nkcr/OSIA/actions/workflows/go.yml/badge.svg)](https://github.com/nkcr/OSIA/actions/workflows/go.yml)

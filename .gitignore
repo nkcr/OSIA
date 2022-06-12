@@ -2,3 +2,4 @@
 *.db
 OSIA
 *.cov
+osia-*

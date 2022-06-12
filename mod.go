@@ -16,6 +16,18 @@ import (
 	"github.com/tidwall/buntdb"
 )
 
+// Version contains the current or build version. This variable can be changed
+// at build time with:
+//
+//   go build -ldflags="-X 'main.Version=v1.0.0'"
+//
+// Version should be fetched from git: `git describe --tags`
+var Version = "unknown"
+
+// BuildTime indicates the time at which the binary has been built. Must be set
+// as with Version.
+var BuildTime = "unknown"
+
 const tokenKey = "INSTAGRAM_TOKEN"
 
 var logout = zerolog.ConsoleWriter{
@@ -24,6 +36,7 @@ var logout = zerolog.ConsoleWriter{
 }
 
 func main() {
+	fmt.Println("version;", Version)
 	var interval time.Duration
 	flag.DurationVar(&interval, "interval", time.Hour, "Refresh interval for the aggregator")
 	flag.Parse()
@@ -32,6 +45,7 @@ func main() {
 		With().Timestamp().Logger().
 		With().Caller().Logger()
 
+	logger.Info().Msgf("hi,\n┌───────────────────────────────────────────────┐\n│ Open Source Instagram Aggregator\t\t│\n├───────────────────────────────────────────────┤\n│ Version %s │ Build time %s\t│\n└───────────────────────────────────────────────┘\n", Version, BuildTime)
 	logger.Info().Msgf("using the following refresh interval: %s", interval.String())
 
 	db, err := buntdb.Open("db.db")

@@ -99,27 +99,115 @@ func TestGetMedias(t *testing.T) {
 
 	handler := getMedias(db)
 
-	rr := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, "", nil)
-	require.NoError(t, err)
+	t.Run("Get Medias without count", getTestWithtoutCount(db, medias, handler))
+	t.Run("Get Medias with count", getTestWithCount(db, medias, handler))
+	t.Run("Get Medias with wrong count", getTestWithWrongCount(db, medias, handler))
+	t.Run("Get Medias with over maximum count", getTestWithOverMaximumCount(db, medias, handler))
+}
 
-	handler(rr, req)
-	require.Equal(t, 200, rr.Result().StatusCode)
+func getTestWithtoutCount(db *buntdb.DB, medias []types.Media,
+	handler func(http.ResponseWriter, *http.Request)) func(t *testing.T) {
 
-	// the result should be sorted by timestamp
-	sort.SliceStable(medias, func(i, j int) bool {
-		return medias[i].Timestamp > medias[j].Timestamp
-	})
+	return func(t *testing.T) {
+		t.Parallel()
 
-	result := []types.Media{}
+		rr := httptest.NewRecorder()
+		req, err := http.NewRequest(http.MethodGet, "", nil)
+		require.NoError(t, err)
 
-	err = json.Unmarshal(rr.Body.Bytes(), &result)
-	require.NoError(t, err)
+		handler(rr, req)
+		require.Equal(t, 200, rr.Result().StatusCode)
 
-	// there should be the maximum of 12 medias
-	require.Len(t, result, 12)
+		// the result should be sorted by timestamp
+		sort.SliceStable(medias, func(i, j int) bool {
+			return medias[i].Timestamp > medias[j].Timestamp
+		})
 
-	require.Equal(t, medias[:12], result)
+		result := []types.Media{}
+
+		err = json.Unmarshal(rr.Body.Bytes(), &result)
+		require.NoError(t, err)
+
+		// there should be the maximum of 12 medias
+		require.Len(t, result, 12)
+
+		require.Equal(t, medias[:12], result)
+	}
+}
+
+func getTestWithCount(db *buntdb.DB, medias []types.Media,
+	handler func(http.ResponseWriter, *http.Request)) func(t *testing.T) {
+
+	return func(t *testing.T) {
+		t.Parallel()
+
+		rr := httptest.NewRecorder()
+		req, err := http.NewRequest(http.MethodGet, "http://example.com?count=5", nil)
+		require.NoError(t, err)
+
+		handler(rr, req)
+		require.Equal(t, 200, rr.Result().StatusCode)
+
+		// the result should be sorted by timestamp
+		sort.SliceStable(medias, func(i, j int) bool {
+			return medias[i].Timestamp > medias[j].Timestamp
+		})
+
+		result := []types.Media{}
+
+		err = json.Unmarshal(rr.Body.Bytes(), &result)
+		require.NoError(t, err)
+
+		// there should be the count of 5
+		require.Len(t, result, 5)
+
+		require.Equal(t, medias[:5], result)
+	}
+}
+
+func getTestWithWrongCount(db *buntdb.DB, medias []types.Media,
+	handler func(http.ResponseWriter, *http.Request)) func(t *testing.T) {
+
+	return func(t *testing.T) {
+		t.Parallel()
+
+		rr := httptest.NewRecorder()
+		req, err := http.NewRequest(http.MethodGet, "http://example.com?count=-1", nil)
+		require.NoError(t, err)
+
+		handler(rr, req)
+		require.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
+	}
+}
+
+func getTestWithOverMaximumCount(db *buntdb.DB, medias []types.Media,
+	handler func(http.ResponseWriter, *http.Request)) func(t *testing.T) {
+
+	return func(t *testing.T) {
+		t.Parallel()
+
+		rr := httptest.NewRecorder()
+		req, err := http.NewRequest(http.MethodGet, "http://example.com?count=50", nil)
+		require.NoError(t, err)
+
+		handler(rr, req)
+		require.Equal(t, 200, rr.Result().StatusCode)
+
+		// the result should be sorted by timestamp
+		sort.SliceStable(medias, func(i, j int) bool {
+			return medias[i].Timestamp > medias[j].Timestamp
+		})
+
+		result := []types.Media{}
+
+		err = json.Unmarshal(rr.Body.Bytes(), &result)
+		require.NoError(t, err)
+
+		// there should be the maximum of 12
+		require.Len(t, result, 12)
+
+		require.Equal(t, medias[:12], result)
+	}
 }
 
 // -----------------------------------------------------------------------------

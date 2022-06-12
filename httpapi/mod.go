@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -115,7 +116,25 @@ func (n HTTPAPI) GetAddr() net.Addr {
 
 func getMedias(db *buntdb.DB) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		result := make([]json.RawMessage, maxMedias)
+
+		count := maxMedias
+
+		countStr := r.URL.Query().Get("count")
+		if countStr != "" {
+			c, err := strconv.Atoi(countStr)
+			if err != nil || c < 1 {
+				http.Error(w, "bad count value: "+countStr, http.StatusBadRequest)
+				return
+			}
+
+			count = c
+
+			if count > maxMedias {
+				count = maxMedias
+			}
+		}
+
+		result := make([]json.RawMessage, count)
 		i := 0
 
 		err := db.View(func(tx *buntdb.Tx) error {
@@ -123,7 +142,7 @@ func getMedias(db *buntdb.DB) func(http.ResponseWriter, *http.Request) {
 				result[i] = []byte(value)
 				i++
 
-				return i < maxMedias
+				return i < count
 			})
 
 			return nil

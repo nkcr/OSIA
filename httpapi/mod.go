@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -39,7 +40,7 @@ func NewNativeHTTP(addr string, db *buntdb.DB, imagesFolder string,
 	mux.HandleFunc("/api/medias", getMedias(db))
 
 	fs := http.FileServer(http.Dir(imagesFolder))
-	mux.Handle("/images/", http.StripPrefix("/images/", fs))
+	mux.Handle("/images/", noListings(http.StripPrefix("/images/", fs)))
 
 	server := &http.Server{
 		Addr:         addr,
@@ -208,4 +209,15 @@ func tracing(nextRequestID func() string) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func noListings(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

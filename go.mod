@@ -3,6 +3,7 @@ module github.com/nkcr/OSIA
 go 1.18
 
 require (
+	github.com/jessevdk/go-flags v1.5.0
 	github.com/rs/zerolog v1.27.0
 	github.com/stretchr/testify v1.7.2
 	github.com/tidwall/buntdb v1.2.9

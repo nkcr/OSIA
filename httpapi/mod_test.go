@@ -61,7 +61,7 @@ func TestScenario(t *testing.T) {
 	resp, err := http.Get(url)
 	require.NoError(t, err)
 
-	require.Equal(t, 200, resp.StatusCode)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func TestWrongAddr(t *testing.T) {
@@ -123,7 +123,7 @@ func getTestWithtoutCount(db *buntdb.DB, medias []types.Media,
 		require.NoError(t, err)
 
 		handler(rr, req)
-		require.Equal(t, 200, rr.Result().StatusCode)
+		require.Equal(t, http.StatusOK, rr.Result().StatusCode)
 
 		// the result should be sorted by timestamp
 		sort.SliceStable(medias, func(i, j int) bool {
@@ -153,7 +153,7 @@ func getTestWithCount(db *buntdb.DB, medias []types.Media,
 		require.NoError(t, err)
 
 		handler(rr, req)
-		require.Equal(t, 200, rr.Result().StatusCode)
+		require.Equal(t, http.StatusOK, rr.Result().StatusCode)
 
 		// the result should be sorted by timestamp
 		sort.SliceStable(medias, func(i, j int) bool {
@@ -198,7 +198,7 @@ func getTestWithOverMaximumCount(db *buntdb.DB, medias []types.Media,
 		require.NoError(t, err)
 
 		handler(rr, req)
-		require.Equal(t, 200, rr.Result().StatusCode)
+		require.Equal(t, http.StatusOK, rr.Result().StatusCode)
 
 		// the result should be sorted by timestamp
 		sort.SliceStable(medias, func(i, j int) bool {
@@ -215,6 +215,26 @@ func getTestWithOverMaximumCount(db *buntdb.DB, medias []types.Media,
 
 		require.Equal(t, medias[:12], result)
 	}
+}
+
+func TestNoListings(t *testing.T) {
+	handler := noListings(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+
+	rr := httptest.NewRecorder()
+	req, err := http.NewRequest(http.MethodGet, "http://example.com/images/", nil)
+	require.NoError(t, err)
+
+	handler.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusNotFound, rr.Result().StatusCode)
+
+	rr = httptest.NewRecorder()
+	req, err = http.NewRequest(http.MethodGet, "http://example.com/images/a.jpg", nil)
+	require.NoError(t, err)
+
+	handler.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusOK, rr.Result().StatusCode)
 }
 
 // -----------------------------------------------------------------------------

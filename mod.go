@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jessevdk/go-flags"
 	"github.com/nkcr/OSIA/aggregator"
 	"github.com/nkcr/OSIA/httpapi"
 	"github.com/nkcr/OSIA/instagram"
@@ -36,23 +36,83 @@ var logout = zerolog.ConsoleWriter{
 	TimeFormat: time.RFC3339,
 }
 
+// args defines the CLI arguments. You can always use -h to see the help.
+type args struct {
+	Interval     time.Duration `short:"i" long:"interval" default:"1h" description:"Refresh interval used by the Aggregator."`
+	DBFilePath   string        `short:"d" long:"dbfilepath" default:"osia.db" description:"File path of the database."`
+	ImagesFolder string        `short:"j" long:"imagesfolder" description:"Folder used to saved images. By default it uses $HOME/.OSIA/images."`
+	HTTPListen   string        `short:"l" long:"listen" default:"0.0.0.0:3333" description:"The listen address of the HTTP server that servers the API."`
+	Version      bool          `short:"v" long:"version" description:"Displays the version."`
+}
+
 func main() {
-	fmt.Println("version;", Version)
-	var interval time.Duration
-	flag.DurationVar(&interval, "interval", time.Hour, "Refresh interval for the aggregator")
-	flag.Parse()
+	var args args
+	parser := flags.NewParser(&args, flags.Default)
+
+	remaining, err := parser.Parse()
+	if err != nil {
+		flagsErr, ok := err.(*flags.Error)
+		if ok && flagsErr.Type == flags.ErrHelp {
+			os.Exit(0)
+		}
+
+		fmt.Println("failed to parse arguments:", err.Error())
+		os.Exit(1)
+	}
+
+	if len(remaining) != 0 {
+		fmt.Printf("unknown flags: %v\n", remaining)
+		os.Exit(1)
+	}
+
+	if args.Version {
+		fmt.Println("OSIA", Version, "-", BuildTime)
+		os.Exit(0)
+	}
+
+	// set the default value for the imagesFolder argument
+	if args.ImagesFolder == "" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			panic(fmt.Sprintf("failed to get home dir: %v", err))
+		}
+
+		imagesFolder := filepath.Join(homeDir, ".OSIA", "images")
+		args.ImagesFolder = imagesFolder
+	}
 
 	var logger = zerolog.New(logout).Level(zerolog.InfoLevel).
 		With().Timestamp().Logger().
 		With().Caller().Logger()
 
-	logger.Info().Msgf("hi,\n┌───────────────────────────────────────────────┐\n│ Open Source Instagram Aggregator\t\t│\n├───────────────────────────────────────────────┤\n│ Version %s │ Build time %s\t│\n└───────────────────────────────────────────────┘\n", Version, BuildTime)
-	logger.Info().Msgf("using the following refresh interval: %s", interval.String())
+	logger.Info().Msgf("hi,\n"+
+		"┌───────────────────────────────────────────────┐\n"+
+		"│    ** Open Source Instagram Aggregator **\t│\n"+
+		"├───────────────────────────────────────────────┤\n"+
+		"│ Version %s │ Build time %s\t│\n"+
+		"├───────────────────────────────────────────────┤\n"+
+		"│ Interval %s\t│\n"+
+		"├───────────────────────────────────────────────┤\n"+
+		"│ DBFilePath %s\t│\n"+
+		"├───────────────────────────────────────────────┤\n"+
+		"│ ImagesFolder %s\t│\n"+
+		"├───────────────────────────────────────────────┤\n"+
+		"│ HTTPListen %s\t│\n"+
+		"└───────────────────────────────────────────────┘\n",
+		Version, BuildTime, args.Interval.String(), args.DBFilePath,
+		args.ImagesFolder, args.HTTPListen)
 
-	db, err := buntdb.Open("db.db")
+	err = os.MkdirAll(filepath.Dir(args.DBFilePath), 0744)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create db dir: %v", err))
+	}
+
+	db, err := buntdb.Open(args.DBFilePath)
 	if err != nil {
 		panic(err)
 	}
+
+	defer db.Close()
 
 	err = db.CreateIndex("timestamp", "*", buntdb.IndexJSON("timestamp"))
 	if err != nil {
@@ -64,14 +124,7 @@ func main() {
 		panic(fmt.Sprintf("please set the %s variable", tokenKey))
 	}
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		panic(fmt.Sprintf("failed to get home dir: %v", err))
-	}
-
-	imagesFolder := filepath.Join(homeDir, ".OSIA", "images")
-
-	err = os.MkdirAll(imagesFolder, os.ModePerm)
+	err = os.MkdirAll(args.ImagesFolder, 0744)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create config dir: %v", err))
 	}
@@ -80,15 +133,15 @@ func main() {
 
 	api := instagram.NewHTTPAPI(token, client)
 
-	agg := aggregator.NewBasicAggregator(db, api, imagesFolder, client, logger)
-	httpserver := httpapi.NewNativeHTTP(":3333", db, imagesFolder, logger)
+	agg := aggregator.NewBasicAggregator(db, api, args.ImagesFolder, client, logger)
+	httpserver := httpapi.NewNativeHTTP(args.HTTPListen, db, args.ImagesFolder, logger)
 
 	wait := sync.WaitGroup{}
 
 	wait.Add(1)
 	go func() {
 		defer wait.Done()
-		err = agg.Start(interval)
+		err = agg.Start(args.Interval)
 		if err != nil {
 			logger.Err(err).Msg("failed to start the aggregator... exiting")
 			os.Exit(1)
@@ -112,7 +165,6 @@ func main() {
 	httpserver.Stop()
 
 	wait.Wait()
-	db.Close()
 
 	logger.Info().Msg("done")
 }

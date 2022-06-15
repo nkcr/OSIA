@@ -4,9 +4,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sort"
 	"sync"
 	"testing"
@@ -26,7 +28,12 @@ func TestScenario(t *testing.T) {
 
 	logger := zerolog.New(io.Discard)
 
-	httpapi := NewNativeHTTP("localhost:0", db, logger)
+	tmpdir, err := ioutil.TempDir("", "OSIA")
+	require.NoError(t, err)
+
+	defer os.RemoveAll(tmpdir)
+
+	httpapi := NewNativeHTTP("localhost:0", db, tmpdir, logger)
 
 	wait := sync.WaitGroup{}
 	wait.Add(1)

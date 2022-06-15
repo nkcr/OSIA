@@ -52,6 +52,8 @@ func (h HTTPAPI) GetMedias() (types.Medias, error) {
 		return types.Medias{}, fmt.Errorf("failed to get '%s': %v", u, err)
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode != 200 {
 		return types.Medias{}, statusError(resp)
 	}
@@ -80,6 +82,8 @@ func (h HTTPAPI) GetMedia(id string) (types.Media, error) {
 		return types.Media{}, fmt.Errorf("failed to get '%s': %v", u, err)
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode != 200 {
 		return types.Media{}, statusError(resp)
 	}
@@ -107,6 +111,8 @@ func (h *HTTPAPI) RefreshToken() error {
 	if err != nil {
 		return fmt.Errorf("failed to get '%s': %v", u, err)
 	}
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		return statusError(resp)

@@ -24,7 +24,9 @@ type key int
 const requestIDKey key = 0
 const maxMedias = 12
 
-func NewNativeHTTP(addr string, db *buntdb.DB, logger zerolog.Logger) HTTP {
+func NewNativeHTTP(addr string, db *buntdb.DB, imagesFolder string,
+	logger zerolog.Logger) HTTP {
+
 	logger = logger.With().Str("role", "http").Logger()
 	logger.Info().Msg("Server is starting...")
 
@@ -35,6 +37,9 @@ func NewNativeHTTP(addr string, db *buntdb.DB, logger zerolog.Logger) HTTP {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/api/medias", getMedias(db))
+
+	fs := http.FileServer(http.Dir(imagesFolder))
+	mux.Handle("/images/", http.StripPrefix("/images/", fs))
 
 	server := &http.Server{
 		Addr:         addr,
@@ -157,6 +162,7 @@ func getMedias(db *buntdb.DB) func(http.ResponseWriter, *http.Request) {
 		result = result[:i]
 
 		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 
 		encoder := json.NewEncoder(w)
 

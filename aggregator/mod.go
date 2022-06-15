@@ -3,6 +3,11 @@ package aggregator
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -12,21 +17,34 @@ import (
 	"github.com/tidwall/buntdb"
 )
 
+// Aggregator defines the primitives required for an Aggregator.
 type Aggregator interface {
+	// Start should start a goroutine that periodically fetches content on
+	// Instagram and update the local database accordingly.
 	Start(interval time.Duration) error
+
+	// Stop should stop the periodical update and free resources.
 	Stop()
 }
 
+// HTTPClient defines the primitive needed to perform HTTP queries
+type HTTPClient interface {
+	Get(url string) (resp *http.Response, err error)
+}
+
+// NewBasicAggregator returns a new initialized basic Aggregator.
 func NewBasicAggregator(db *buntdb.DB, api instagram.InstagramAPI,
-	logger zerolog.Logger) Aggregator {
+	imagesFolder string, client HTTPClient, logger zerolog.Logger) Aggregator {
 
 	logger = logger.With().Str("role", "aggregator").Logger()
 
 	return &BasicAggregator{
-		db:     db,
-		api:    api,
-		quit:   make(chan struct{}),
-		logger: logger,
+		db:           db,
+		api:          api,
+		quit:         make(chan struct{}),
+		logger:       logger,
+		imagesFolder: imagesFolder,
+		client:       client,
 	}
 }
 
@@ -35,12 +53,16 @@ func NewBasicAggregator(db *buntdb.DB, api instagram.InstagramAPI,
 // - implements aggregator.Aggregator
 type BasicAggregator struct {
 	sync.Mutex
-	db     *buntdb.DB
-	api    instagram.InstagramAPI
-	logger zerolog.Logger
-	quit   chan struct{}
+	db           *buntdb.DB
+	api          instagram.InstagramAPI
+	logger       zerolog.Logger
+	quit         chan struct{}
+	imagesFolder string
+	client       HTTPClient
 }
 
+// Start implements aggregator.Aggregator. It should be called only if the
+// aggregator is not already running.
 func (a *BasicAggregator) Start(interval time.Duration) error {
 	a.logger.Info().Msg("aggregator starting")
 
@@ -119,6 +141,13 @@ func (a *BasicAggregator) updateMedias() error {
 			}
 
 			a.logger.Info().Msgf("new media '%s' added", media.ID)
+
+			imagePath := filepath.Join(a.imagesFolder, media.ID+".jpg")
+
+			err = saveImage(media.MediaURL, imagePath, a.client)
+			if err != nil {
+				return fmt.Errorf("failed to save image: %v", err)
+			}
 		}
 		return nil
 	})
@@ -130,6 +159,36 @@ func (a *BasicAggregator) updateMedias() error {
 	return nil
 }
 
+func saveImage(url, path string, client HTTPClient) error {
+	resp, err := client.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to get URL '%s': %v", url, err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("http request failed with status %s: %s", resp.Status, buf)
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("failed to create file '%s': %v", path, err)
+	}
+
+	defer file.Close()
+
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to copy bytes: %v", err)
+	}
+
+	return nil
+}
+
+// Stop implements aggregator.Aggregator. It should be called only if the
+// Aggregator is started.
 func (a *BasicAggregator) Stop() {
 	a.quit <- struct{}{}
 }

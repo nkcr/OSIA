@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -63,10 +64,24 @@ func main() {
 		panic(fmt.Sprintf("please set the %s variable", tokenKey))
 	}
 
-	api := instagram.NewHTTPAPI(token, http.DefaultClient)
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		panic(fmt.Sprintf("failed to get home dir: %v", err))
+	}
 
-	agg := aggregator.NewBasicAggregator(db, api, logger)
-	httpserver := httpapi.NewNativeHTTP(":3333", db, logger)
+	imagesFolder := filepath.Join(homeDir, ".OSIA", "images")
+
+	err = os.MkdirAll(imagesFolder, os.ModePerm)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create config dir: %v", err))
+	}
+
+	client := http.DefaultClient
+
+	api := instagram.NewHTTPAPI(token, client)
+
+	agg := aggregator.NewBasicAggregator(db, api, imagesFolder, client, logger)
+	httpserver := httpapi.NewNativeHTTP(":3333", db, imagesFolder, logger)
 
 	wait := sync.WaitGroup{}
 
@@ -97,5 +112,7 @@ func main() {
 	httpserver.Stop()
 
 	wait.Wait()
+	db.Close()
+
 	logger.Info().Msg("done")
 }

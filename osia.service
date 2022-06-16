@@ -1,0 +1,27 @@
+# To be placed in "/etc/systemd/system/osia.service"
+# Enable with "sudo systemctl enable --now osia.service"
+# Make sure" /opt/osia/bin" folder exists with owner and user "osia"
+
+[Unit]
+Description=OSIA service, aggregator and HTTP API
+
+[Service]
+
+# Create with "sudo useradd -r osia"
+User=osia
+Group=osia
+
+Type=simple
+Restart=on-failure
+
+# Replace "XXX"
+Environment="INSTAGRAM_TOKEN=XXX"
+
+# change if your path to the OSIA binary is different
+ExecStart=/opt/osia/bin/osia --interval 1h --dbfilepath /opt/osia/osia.db --imagesfolder /opt/osia/images --listen 0.0.0.0:3333
+
+StandardOutput=append:/var/log/osia/osia.log
+StandardError=append:/var/log/osia/osia-errors.log
+
+[Install]
+WantedBy=default.target

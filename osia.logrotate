@@ -1,0 +1,9 @@
+# Make sure "logrotate" is installed and move this file to "/etc/logrotate.d/"
+
+/var/log/osia/* {
+    weekly
+    rotate 5
+    size 10M
+    compress
+    delaycompress
+}

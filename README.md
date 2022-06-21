@@ -15,12 +15,41 @@ The application is composed of an aggregator, which periodically checks new
 posts and saves them on a local database, and an HTTP server, which serves posts
 from the local database. 
 
+<div align="center">
+
+![demo](OSIA-demo.gif)
+
+</div>
+
+## Why do I need that ?
+
+Due to past abuses (Cambridge Analytica user data scandal), Facebook restricted
+its APIs, including the Instagram one. Even if an Instagram account is public,
+fetching its list of posts now requires a valid token that must be renewed at
+regular interval. Sadly (for developers, but probably not for Instagram users),
+it prevents a website from directly fetching posts from Instagram. Therefore, a
+third service is needed to collect posts and serve them.
+
+## Authentication
+
+OSIA uses the [Instagram basic display
+API](https://developers.facebook.com/docs/instagram-basic-display-api/). To
+fetch posts from a public Instagram account you need to have a valid token. This
+token can be generated with the Instagram [token
+generator](https://developers.facebook.com/docs/instagram-basic-display-api/overview?locale=en_US#user-token-generator).
+Prior to that, you will need to create a Facebook app with the basic instagram
+API product. Follow instructions from the official documentation:
+https://developers.facebook.com/docs/instagram-basic-display-api/getting-started?locale=en_US#step-1--create-a-facebook-app.
+
+A token has a limited value, but can be renewed. To keep the token valid, OSIA
+renews it every time it makes an API call to check the latest posts.
+
 ## Requirement
 
 You can use the existing binaries from the [releases
 section](https://github.com/nkcr/OSIA/releases), which are completely
 self-contained. No additional installation is needed. If you have Go installed
-(>=1.18), you can also compile the app yourself from the root folder:
+(>=1.18), you can also compile the app yourself. From the root folder:
 
 ```sh
 # build a binary

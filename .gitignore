@@ -2,4 +2,6 @@
 *.db
 OSIA
 *.cov
-osia-*
+osia-darwin-*
+osia-linux-*
+osia-windows-*

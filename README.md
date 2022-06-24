@@ -146,3 +146,51 @@ sudo systemctl enable --now osia.service
 ```
 
 You should then see the starting logs with `sudo service osia status`.
+
+## Practical use
+
+Here is a minimal example using react to render a list of posts using OSIA's
+REST API.
+
+```ts
+const Instagram = () => {
+  const [posts, setPosts] = useState([])
+
+  useEffect(() => {
+    fetch(`${ENDPOINT}/api/medias?count=6`)
+      .then(response => response.json())
+      .then(resultData => {
+        setPosts(resultData)
+      })
+  }, [])
+
+  return (
+    <div>
+      {posts.map((post) => (
+        <Post key={post.id} post={post}/>
+      ))}
+    </div>
+  )
+}
+
+const Post = ({ post }) => {
+  return (
+      <section>
+        <a href={post.permalink}>
+          <img src={`${ENDPOINT}/images/${post.id}.jpg`}/>
+        </a>
+        <div>
+          <p dangerouslySetInnerHTML={{ __html: post.caption }}></p>
+          <p>{post.timestamp}</p>
+        </div>
+      </section>
+  )
+}
+```
+
+# Dependencies
+
+- [buntdb](https://github.com/tidwall/buntdb) a great key-value store for storing the posts (MIT license)
+- [go-flags](https://github.com/jessevdk/go-flags) for argument parsing (BSD-3-Clause license)
+- [zerolog](https://github.com/rs/zerolog) for logging (MIT license)
+- [testify](https://github.com/stretchr/testify) for unit testing (MIT license)

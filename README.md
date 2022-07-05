@@ -112,6 +112,20 @@ tag would not work. To get around that, images are saved locally to the provided
 (or default) `imagesfolder` and served at the `http://<listen>/images/<post
 id>.jpg` endpoint. "media id" corresponds to the `id` of the post.
 
+## Use docker
+
+You can quickly use OSIA with docker. The following fetches the latest images
+from the [github
+registry](https://github.com/nkcr/OSIA/pkgs/container/osia-deploy) and runs
+OSIA. After that you can open your browser on `localhost:3333/api/medias` and
+see your posts. Data are also persisted on a `data/` folder that you can re-use
+between runs:
+
+```sh
+docker pull ghcr.io/nkcr/osia-deploy:latest
+docker run -e INSTAGRAM_TOKEN=XXX -p 3333:3333 -v $(pwd)/data:/data ghcr.io/nkcr/osia-deploy
+```
+
 ## Deployment
 
 It is recommended to use `systemd` and a reverse proxy, such as `nginx`. Place

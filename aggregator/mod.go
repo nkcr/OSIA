@@ -17,7 +17,8 @@ import (
 	"github.com/tidwall/buntdb"
 )
 
-// Aggregator defines the primitives required for an Aggregator.
+// Aggregator defines the primitives required for an Aggregator. An aggregator's
+// job is to periodically fetch new entries and store them on a database.
 type Aggregator interface {
 	// Start should start a goroutine that periodically fetches content on
 	// Instagram and update the local database accordingly.
@@ -32,13 +33,13 @@ type HTTPClient interface {
 	Get(url string) (resp *http.Response, err error)
 }
 
-// NewBasicAggregator returns a new initialized basic Aggregator.
-func NewBasicAggregator(db *buntdb.DB, api instagram.InstagramAPI,
+// NewInstagramAggregator returns a new initialized instagram aggregator.
+func NewInstagramAggregator(db *buntdb.DB, api instagram.InstagramAPI,
 	imagesFolder string, client HTTPClient, logger zerolog.Logger) Aggregator {
 
 	logger = logger.With().Str("role", "aggregator").Logger()
 
-	return &BasicAggregator{
+	return &InstagramAggregator{
 		db:           db,
 		api:          api,
 		quit:         make(chan struct{}),
@@ -48,10 +49,10 @@ func NewBasicAggregator(db *buntdb.DB, api instagram.InstagramAPI,
 	}
 }
 
-// Aggregator implements a basic Aggregator
+// Aggregator implements an aggregator that fetches Instagram posts.
 //
 // - implements aggregator.Aggregator
-type BasicAggregator struct {
+type InstagramAggregator struct {
 	sync.Mutex
 	db           *buntdb.DB
 	api          instagram.InstagramAPI
@@ -63,7 +64,7 @@ type BasicAggregator struct {
 
 // Start implements aggregator.Aggregator. It should be called only if the
 // aggregator is not already running.
-func (a *BasicAggregator) Start(interval time.Duration) error {
+func (a *InstagramAggregator) Start(interval time.Duration) error {
 	a.logger.Info().Msg("aggregator starting")
 
 	ticker := time.NewTicker(interval)
@@ -87,7 +88,7 @@ func (a *BasicAggregator) Start(interval time.Duration) error {
 	}
 }
 
-func (a *BasicAggregator) updateMedias() error {
+func (a *InstagramAggregator) updateMedias() error {
 	a.logger.Info().Msg("refreshing token")
 	err := a.api.RefreshToken()
 	if err != nil {
@@ -189,6 +190,6 @@ func saveImage(url, path string, client HTTPClient) error {
 
 // Stop implements aggregator.Aggregator. It should be called only if the
 // Aggregator is started.
-func (a *BasicAggregator) Stop() {
+func (a *InstagramAggregator) Stop() {
 	a.quit <- struct{}{}
 }

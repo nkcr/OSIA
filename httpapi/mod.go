@@ -14,6 +14,7 @@ import (
 	"github.com/tidwall/buntdb"
 )
 
+// HTTP defines the primitives expected from a basic HTTP server
 type HTTP interface {
 	Start() error
 	Stop()
@@ -25,7 +26,8 @@ type key int
 const requestIDKey key = 0
 const maxMedias = 12
 
-func NewNativeHTTP(addr string, db *buntdb.DB, imagesFolder string,
+// NewNativeHTTP returns a new initialized Instagram HTTP server
+func NewInstagramHTTP(addr string, db *buntdb.DB, imagesFolder string,
 	logger zerolog.Logger) HTTP {
 
 	logger = logger.With().Str("role", "http").Logger()
@@ -50,21 +52,26 @@ func NewNativeHTTP(addr string, db *buntdb.DB, imagesFolder string,
 		IdleTimeout:  15 * time.Second,
 	}
 
-	return &HTTPAPI{
+	return &InstagramHTTP{
 		logger: logger,
 		server: server,
 		quit:   make(chan struct{}),
 	}
 }
 
-type HTTPAPI struct {
+// InstagramHTTP implements an HTTP server that serves aggregated Instagram
+// posts.
+//
+// - implements httpapi.HTTP
+type InstagramHTTP struct {
 	logger zerolog.Logger
 	server *http.Server
 	quit   chan struct{}
 	ln     net.Listener
 }
 
-func (n *HTTPAPI) Start() error {
+// Start implements httpapi.HTTP
+func (n *InstagramHTTP) Start() error {
 	ln, err := net.Listen("tcp", n.server.Addr)
 	if err != nil {
 		return fmt.Errorf("failed to create conn '%s': %v", n.server.Addr, err)
@@ -103,7 +110,8 @@ func (n *HTTPAPI) Start() error {
 	return nil
 }
 
-func (n HTTPAPI) Stop() {
+// Stop implements httpapi.HTTP
+func (n InstagramHTTP) Stop() {
 	n.logger.Info().Msg("stopping")
 	// we don't close it so it can be called multiple times without harm
 	select {
@@ -112,7 +120,7 @@ func (n HTTPAPI) Stop() {
 	}
 }
 
-func (n HTTPAPI) GetAddr() net.Addr {
+func (n InstagramHTTP) GetAddr() net.Addr {
 	if n.ln == nil {
 		return nil
 	}
@@ -120,6 +128,7 @@ func (n HTTPAPI) GetAddr() net.Addr {
 	return n.ln.Addr()
 }
 
+// getMedias returns an HTTP handler that returns a list of medias
 func getMedias(db *buntdb.DB) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -211,6 +220,7 @@ func tracing(nextRequestID func() string) func(http.Handler) http.Handler {
 	}
 }
 
+// noListings defines a handler that prevents listing entries
 func noListings(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/") {

@@ -31,7 +31,7 @@ func TestStartFail(t *testing.T) {
 
 	logger := zerolog.New(io.Discard)
 
-	agg := NewBasicAggregator(db, instagram, "", nil, logger)
+	agg := NewInstagramAggregator(db, instagram, "", nil, logger)
 
 	err = agg.Start(time.Second)
 	require.EqualError(t, err, "failed to update medias: failed to refresh token: fake")
@@ -50,7 +50,7 @@ func TestStartStop(t *testing.T) {
 
 	defer os.RemoveAll(tmpdir)
 
-	agg := NewBasicAggregator(db, instagram, tmpdir, nil, logger)
+	agg := NewInstagramAggregator(db, instagram, tmpdir, nil, logger)
 
 	wait := sync.WaitGroup{}
 	wait.Add(1)
@@ -72,7 +72,7 @@ func TestUpdateMediasRefreshFail(t *testing.T) {
 		refreshErr: errors.New("fake"),
 	}
 
-	agg := BasicAggregator{
+	agg := InstagramAggregator{
 		api: instagram,
 	}
 
@@ -85,7 +85,7 @@ func TestUpdateMediasGetMediasFail(t *testing.T) {
 		mediasErr: errors.New("fake"),
 	}
 
-	agg := BasicAggregator{
+	agg := InstagramAggregator{
 		api: instagram,
 	}
 
@@ -109,7 +109,7 @@ func TestUpdateMediaGetMediaError(t *testing.T) {
 	db, err := buntdb.Open(":memory:")
 	require.NoError(t, err)
 
-	agg := BasicAggregator{
+	agg := InstagramAggregator{
 		api: instagram,
 		db:  db,
 	}
@@ -137,7 +137,7 @@ func TestUpdateMediaSaveImageError(t *testing.T) {
 		err: errors.New("fake"),
 	}
 
-	agg := BasicAggregator{
+	agg := InstagramAggregator{
 		api:    instagram,
 		db:     db,
 		client: client,
@@ -173,7 +173,7 @@ func TestUpdateMediasSuccess(t *testing.T) {
 		statusCode: 200,
 	}
 
-	agg := BasicAggregator{
+	agg := InstagramAggregator{
 		api:          instagram,
 		db:           db,
 		imagesFolder: tmpdir,

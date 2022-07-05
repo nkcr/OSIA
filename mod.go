@@ -133,8 +133,8 @@ func main() {
 
 	api := instagram.NewHTTPAPI(token, client)
 
-	agg := aggregator.NewBasicAggregator(db, api, args.ImagesFolder, client, logger)
-	httpserver := httpapi.NewNativeHTTP(args.HTTPListen, db, args.ImagesFolder, logger)
+	agg := aggregator.NewInstagramAggregator(db, api, args.ImagesFolder, client, logger)
+	httpserver := httpapi.NewInstagramHTTP(args.HTTPListen, db, args.ImagesFolder, logger)
 
 	wait := sync.WaitGroup{}
 

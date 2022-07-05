@@ -10,12 +10,14 @@ import (
 	"github.com/nkcr/OSIA/instagram/types"
 )
 
+// InstagramAPI defines the primitives we expect the Instagram API to provide
 type InstagramAPI interface {
 	GetMedias() (types.Medias, error)
 	GetMedia(id string) (types.Media, error)
 	RefreshToken() error
 }
 
+// HTTPClient defines the function we expect from an HTTP client
 type HTTPClient interface {
 	Get(url string) (resp *http.Response, err error)
 }
@@ -69,6 +71,7 @@ func (h HTTPAPI) GetMedias() (types.Medias, error) {
 	return medias, nil
 }
 
+// GetMedia implements InstagramAPI
 func (h HTTPAPI) GetMedia(id string) (types.Media, error) {
 	vals := url.Values{
 		"access_token": []string{h.token},
@@ -99,6 +102,7 @@ func (h HTTPAPI) GetMedia(id string) (types.Media, error) {
 	return media, nil
 }
 
+// RefreshToken implements InstagramAPI
 func (h *HTTPAPI) RefreshToken() error {
 	vals := url.Values{
 		"access_token": []string{h.token},

@@ -33,7 +33,7 @@ func TestScenario(t *testing.T) {
 
 	defer os.RemoveAll(tmpdir)
 
-	httpapi := NewNativeHTTP("localhost:0", db, tmpdir, logger)
+	httpapi := NewInstagramHTTP("localhost:0", db, tmpdir, logger)
 
 	wait := sync.WaitGroup{}
 	wait.Add(1)
@@ -65,7 +65,7 @@ func TestScenario(t *testing.T) {
 }
 
 func TestWrongAddr(t *testing.T) {
-	a := HTTPAPI{
+	a := InstagramHTTP{
 		server: &http.Server{Addr: "x"},
 	}
 
@@ -75,7 +75,7 @@ func TestWrongAddr(t *testing.T) {
 
 // If the listener is nil, the server should return a nil address.
 func TestGetAddr(t *testing.T) {
-	a := HTTPAPI{}
+	a := InstagramHTTP{}
 
 	addr := a.GetAddr()
 	require.Nil(t, addr)

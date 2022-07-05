@@ -1,5 +1,6 @@
 package types
 
+// Medias defines a list of Instagram media
 type Medias struct {
 	Data   []Media `json:"data"`
 	Paging struct {
@@ -10,6 +11,7 @@ type Medias struct {
 	} `json:"paging"`
 }
 
+// Media defines an Instagram media
 type Media struct {
 	ID        string `json:"id"`
 	Caption   string `json:"caption"`

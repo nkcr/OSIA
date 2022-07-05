@@ -1,5 +1,5 @@
 <div align="center">
-<img width="180" src="logo.jpg"/>
+<img width="180" src=".assets/logo.jpg"/>
 </div>
 
 # Open Source Instagram Aggregator
@@ -18,7 +18,7 @@ from the local database.
 
 <div align="center">
 
-![demo](OSIA-demo.gif)
+![demo](.assets/OSIA-demo.gif)
 
 </div>
 

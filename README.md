@@ -6,6 +6,7 @@
 
 [![Go Tests](https://github.com/nkcr/OSIA/actions/workflows/go.yml/badge.svg)](https://github.com/nkcr/OSIA/actions/workflows/go.yml)
 [![Coverage Status](https://coveralls.io/repos/github/nkcr/OSIA/badge.svg?branch=main)](https://coveralls.io/github/nkcr/OSIA?branch=main)
+[![Go Report Card](https://goreportcard.com/badge/github.com/nkcr/OSIA)](https://goreportcard.com/report/github.com/nkcr/OSIA)
 
 OSIA stores your public instagram feed on a DB and offers a simple REST API to
 later use your it wherever you want. This is especially convenient to display

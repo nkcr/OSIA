@@ -33,14 +33,14 @@ func NewHTTPAPI(token string, client HTTPClient) InstagramAPI {
 
 // HTTPAPI implements the Instagram API over HTTP
 //
-// - implements InstagramAPI
+// - implements instagram.InstagramAPI
 type HTTPAPI struct {
 	base   string
 	token  string
 	client HTTPClient
 }
 
-// GetMedias implements InstagramAPI
+// GetMedias implements instagram.InstagramAPI
 func (h HTTPAPI) GetMedias() (types.Medias, error) {
 	vals := url.Values{
 		"access_token": []string{h.token},
@@ -71,7 +71,7 @@ func (h HTTPAPI) GetMedias() (types.Medias, error) {
 	return medias, nil
 }
 
-// GetMedia implements InstagramAPI
+// GetMedia implements instagram.InstagramAPI
 func (h HTTPAPI) GetMedia(id string) (types.Media, error) {
 	vals := url.Values{
 		"access_token": []string{h.token},
@@ -102,7 +102,7 @@ func (h HTTPAPI) GetMedia(id string) (types.Media, error) {
 	return media, nil
 }
 
-// RefreshToken implements InstagramAPI
+// RefreshToken implements instagram.InstagramAPI
 func (h *HTTPAPI) RefreshToken() error {
 	vals := url.Values{
 		"access_token": []string{h.token},

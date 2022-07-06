@@ -7,10 +7,11 @@
 [![Go Tests](https://github.com/nkcr/OSIA/actions/workflows/go.yml/badge.svg)](https://github.com/nkcr/OSIA/actions/workflows/go.yml)
 [![Coverage Status](https://coveralls.io/repos/github/nkcr/OSIA/badge.svg?branch=main)](https://coveralls.io/github/nkcr/OSIA?branch=main)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nkcr/OSIA)](https://goreportcard.com/report/github.com/nkcr/OSIA)
+[![Go Reference](https://pkg.go.dev/badge/github.com/nkcr/OSIA.svg)](https://pkg.go.dev/github.com/nkcr/OSIA)
 
-OSIA stores your public instagram feed on a DB and offers a simple REST API to
-later use your it wherever you want. This is especially convenient to display
-your instagram posts on a website.
+OSIA is a service that maintains a copy of your Instagram feed and exposes it
+with a simple REST API. It is especially convenient for displaying instagram
+posts on a website.
 
 The application is composed of an aggregator, which periodically checks new
 posts and saves them on a local database, and an HTTP server, which serves posts

@@ -20,8 +20,8 @@ import (
 // Aggregator defines the primitives required for an Aggregator. An aggregator's
 // job is to periodically fetch new entries and store them on a database.
 type Aggregator interface {
-	// Start should start a goroutine that periodically fetches content on
-	// Instagram and update the local database accordingly.
+	// Start should start a goroutine that periodically fetches content from
+	// Instagram and updates the local database accordingly.
 	Start(interval time.Duration) error
 
 	// Stop should stop the periodical update and free resources.
@@ -49,7 +49,7 @@ func NewInstagramAggregator(db *buntdb.DB, api instagram.InstagramAPI,
 	}
 }
 
-// Aggregator implements an aggregator that fetches Instagram posts.
+// InstagramAggregator implements an aggregator that fetches Instagram posts.
 //
 // - implements aggregator.Aggregator
 type InstagramAggregator struct {
@@ -88,6 +88,8 @@ func (a *InstagramAggregator) Start(interval time.Duration) error {
 	}
 }
 
+// updateMedias gets the latest medias from Instagram and saves those that are
+// not yet in the db.
 func (a *InstagramAggregator) updateMedias() error {
 	a.logger.Info().Msg("refreshing token")
 	err := a.api.RefreshToken()
@@ -160,6 +162,8 @@ func (a *InstagramAggregator) updateMedias() error {
 	return nil
 }
 
+// saveImage downloads an Instagram post's image and saves it locally to be
+// served.
 func saveImage(url, path string, client HTTPClient) error {
 	resp, err := client.Get(url)
 	if err != nil {
